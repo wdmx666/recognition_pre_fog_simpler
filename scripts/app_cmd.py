@@ -87,8 +87,8 @@ if __name__ == "__main__":
     #etl_video()
     #remark_extract_signal()
     #re_etl_feature()
-    select_extract_para()
+    #select_extract_para()
     #select_feature()
     #select_model_hyper_para()
-    #select_event_para()
+    select_event_para()
 

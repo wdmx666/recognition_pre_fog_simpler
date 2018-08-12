@@ -1,6 +1,7 @@
 import os
 import path
 import joblib
+import pandas
 
 from pyhocon import ConfigFactory
 from sklearn.ensemble import RandomForestClassifier
@@ -35,15 +36,6 @@ class ParaSelectorConfig(MyConfig):
         clf = RandomForestClassifier()
         clf.set_params(**para)
         return clf
-
-    @classmethod
-    def featureRanker(cls):
-        from .services import FeatureRanker
-        obj = FeatureRanker()
-        root_p = r'E:\my_proj\fog_recognition\ExtendFoGData\fixed_data\Tuned4Model\SelectFeature\T15_OneByOne'
-        obj.set_para_with_prop({"data_maker": cls.dataMaker4Model(), "model": cls.mlModel(),
-                                "cols_list": cls.COLS_LIST, "data_path": root_p})
-        return obj
 
     @classmethod
     def trainTestCalculator(cls):
@@ -97,8 +89,13 @@ class ParaSelectorConfig(MyConfig):
     def featureSelectorInit(cls):
         from .controllers import FeatureSelectorInit
         from .config.my_node import SelectParaNode
+        from .services import FeatureRanker
+        ranker = FeatureRanker()
+        root_p = r'E:\my_proj\fog_recognition\ExtendFoGData\fixed_data\Tuned4Model\DOE2\T15_OneByOne'
+        ranker.set_para_with_prop({"data_maker": cls.dataMaker4Model(), "model": cls.mlModel(),
+                                   "cols_list": cls.COLS_LIST, "data_path": root_p})
         processor = FeatureSelectorInit(name=SelectParaNode.FeatureSelectorInit.value)
-        processor.set_para_with_prop({"FeatureRanker": cls.featureRanker(), 'cols_list': cls.COLS_LIST, "msg_pool": cls.MSG_POOL})
+        processor.set_para_with_prop({"FeatureRanker": ranker, 'cols_list': cls.COLS_LIST, "msg_pool": cls.MSG_POOL})
         return processor
 
     @classmethod
@@ -106,7 +103,7 @@ class ParaSelectorConfig(MyConfig):
         from .controllers import FeatureSelector
         processor = FeatureSelector(dependencies=[SelectParaNode.FeatureSelectorInit.value], reset=True)
         save_path = path.Path(cls.DATA_PATH).joinpath(processor.class_name)
-        root_p = r'E:\my_proj\fog_recognition\ExtendFoGData\fixed_data\Tuned4Model\SelectFeature\T15_OneByOne'
+        root_p = r'E:\my_proj\fog_recognition\ExtendFoGData\fixed_data\Tuned4Model\DOE2\T15_OneByOne'
         processor.set_para_with_prop({'CV': cls.dirCV(), "save_path": save_path, "data_path": root_p})
         return processor
 
@@ -129,17 +126,24 @@ class ParaSelectorConfig(MyConfig):
     def modelParaSelectorInit(cls):
         from .controllers import ModelParaSelectorInit
         processor = ModelParaSelectorInit(name=SelectParaNode.ModelParaSelectInit.value)
-        para_path = r"E:\my_proj\fog_recognition\ExtendFoGData\fixed_data\Tuned4Model\SelectModel\para.csv"
-        processor.set_para_with_prop({"msg_pool": cls.MSG_POOL, "para_path": para_path})
+        root_p = path.Path(r'E:\my_proj\fog_recognition\ExtendFoGData\fixed_data\Tuned4Model')
+        processor.set_para_with_prop({"msg_pool": cls.MSG_POOL, "para_path": root_p.joinpath('DOE_Para/event_para.csv')})
         return processor
 
     @classmethod
     def modelParaSelector(cls):
         from .controllers import ModelParaSelector
+        import simplejson
         processor = ModelParaSelector(dependencies=[SelectParaNode.ModelParaSelectInit.value], reset=True)
         save_path = path.Path(cls.DATA_PATH).joinpath(processor.class_name)
-        root_p = r'E:\my_proj\fog_recognition\ExtendFoGData\fixed_data\Tuned4Model\SelectModel\T15_OneByOne_Select'
-        processor.set_para_with_prop({'CV': cls.dirCV(), "save_path": save_path, "data_path": root_p})
+        root_p = path.Path(r'E:\my_proj\fog_recognition\ExtendFoGData\fixed_data\Tuned4Model')
+        data_path = root_p.joinpath('FeatureSelector\SelectFeatureResult')
+        processor.set_para_with_prop({'CV': cls.dirCV(), "save_path": save_path, "data_path": data_path})
+
+        select_cols_path = path.Path(cls.MSG_POOL["todo"]).joinpath('45=FeatureSelectorInit')
+        cols = cls.COLS_LIST["no_features"] + simplejson.load(open(select_cols_path))["payload"]
+        for fp in root_p.joinpath('DOE2\T15_OneByOne').files():
+            pandas.read_csv(fp, usecols=cols).to_csv(data_path.joinpath(fp.basename()))
         return processor
 
     @classmethod
@@ -164,8 +168,14 @@ class ParaSelectorConfig(MyConfig):
         from .core_algo import StrategyResult2
         calculator = EventCalculator()
         # 待计算的数据位置
-        data_path = r'E:\my_proj\pre_fog\resources\fixed_data\Tuned4ModelData\FeatureSelectDOE\SelectData_res'
-        calculator.set_para_with_prop({"strategy": StrategyResult2(), "data_path": data_path})
+        root_p = path.Path(r'E:\my_proj\fog_recognition\ExtendFoGData\fixed_data\Tuned4Model')
+        data = joblib.load(root_p.joinpath('ModelParaSelector/15'))
+        for k in data:
+            data[k]["predict_result"].to_csv(root_p.joinpath('ModelParaSelector/SelectedParaResult').joinpath(k))
+        data_path = root_p.joinpath('ModelParaSelector/SelectedParaResult')
+
+        calculator.set_para_with_prop({"strategy": StrategyResult2(), "data_path": data_path,
+                                       "save_path": root_p.joinpath('EventParaSelector')})
         return calculator
 
     @classmethod
@@ -173,8 +183,9 @@ class ParaSelectorConfig(MyConfig):
         from .controllers import EventParaSelectorInit
         processor = EventParaSelectorInit(name=SelectParaNode.EventParaSelectorInit.value)
         # 待调整的参数的列表的位置
-        source_path = r"E:\my_proj\fog_recognition\ExtendFoGData\fixed_data\Tuned4Model\event_para_select\event_para.csv"
-        processor.set_para_with_prop({"msg_pool": cls.MSG_POOL, "para_path": source_path})
+        root_p = path.Path(r'E:\my_proj\fog_recognition\ExtendFoGData\fixed_data\Tuned4Model')
+        para_path = root_p.joinpath('DOE_Para/event_para.csv')
+        processor.set_para_with_prop({"msg_pool": cls.MSG_POOL, "para_path": para_path})
         return processor
 
     @classmethod
@@ -198,7 +209,7 @@ class ParaSelectorConfig(MyConfig):
     @classmethod
     def eventParaSelectorServer(cls):
         from ..commons.msg_server import MsgServer
-        server = MsgServer(cls.eventParaSelectorApp(), n_jobs=2, single_thread=True, time_out=10)
+        server = MsgServer(cls.eventParaSelectorApp(), n_jobs=6, single_thread=False, time_out=10)
         cls.eventParaSelectorInit().process()
         return server
 

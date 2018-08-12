@@ -70,6 +70,7 @@ class MyCalculator(object):
     def __init__(self, name=None):
         self.class_name = self.__class__.__name__
         self.name = name if name is not None else self.class_name
+        self.para = MyProperties()
 
     def calculate(self,msg):
         pass

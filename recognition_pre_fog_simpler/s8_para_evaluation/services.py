@@ -10,7 +10,6 @@ from sklearn import metrics
 os.environ['R_USER'] = r'D:\ProgramLanguageCore\Python\anaconda351\Lib\site-packages\rpy2'
 import rpy2.robjects as robjects
 from rpy2.robjects.packages import importr
-
 from .core_algo import Utils
 from ..commons.common import MyProperties, MyCalculator
 
@@ -116,13 +115,12 @@ class DirCV(MyCalculator):
 class EventCalculator(MyCalculator):
     def __init__(self, name=None):
         super().__init__(name)
-        self.para = MyProperties()
-        self.set_para_with_prop(MyProperties())
+        self.para.setdefault("strategy", None)
+        self.para.setdefault("data_path", None)
+        self.para.setdefault("save_path", None)
 
     def set_para_with_prop(self, my_props):
         self.para.update(my_props)
-        self.para.setdefault("strategy", None)
-        self.para.setdefault("data_path", None)
 
     def calculate(self, msg):
         c = 0
@@ -145,14 +143,15 @@ class EventCalculator(MyCalculator):
             print("=============================================the %d" % c)
 
         print(all_predicted_time)
-        EventPlotter().calculate((ID, all_predicted_time))  # 偷了一个懒，没有注入
+        save_path = path.Path(self.para["save_path"]).joinpath("event_para_"+ID)
+        EventPlotter().calculate((save_path, all_predicted_time))  # 偷了一个懒，没有注入
         return all_predicted_time
 
 
 class EventPlotter(MyCalculator):
 
     def calculate(self, msg):
-        ID, all_predicted_time = msg
+        save_path, all_predicted_time = msg
         x, y, _ = plt.hist(list(itertools.chain.from_iterable(all_predicted_time)), bins=5)
         qt = importr("qualityTools")
         grdevices = importr('grDevices')
@@ -161,6 +160,6 @@ class EventPlotter(MyCalculator):
         x_rp = []
         for i in range(len(x)):
             x_rp.extend([str(ytp[i])]*int(x[i]))
-        grdevices.png(file="Rami%s.png"%str(ID), width=600, height=400)
-        qt.paretoChart(robjects.StrVector(x_rp), main="predicted_time--"+str(ID))
+        grdevices.png(file="%s.png" % save_path, width=600, height=400)
+        qt.paretoChart(robjects.StrVector(x_rp), main="predicted_time--"+save_path.basename())
         grdevices.dev_off()
