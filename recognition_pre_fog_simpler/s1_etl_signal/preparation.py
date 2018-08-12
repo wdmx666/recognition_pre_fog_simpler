@@ -42,7 +42,7 @@ class SignalETLConfig(MyConfig):
 
     @classmethod
     def signalETL4FoG(cls):
-        from .processors import SignalETL4FoG
+        from .controllers import SignalETL4FoG
         processor = SignalETL4FoG(dependencies=[MyNode.RawSignal.name], reset=True)
         etl_props = MyProperties()
         etl_props.update({"parts": cls.PARTS})

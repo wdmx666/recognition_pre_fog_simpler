@@ -1,0 +1,1 @@
+{"ID": "T08", "attribute": {"msg_pool": {"done": "E:\\my_proj\\fog_recognition\\recognition_pre_fog_simpler\\data\\msg_pool\\done", "todo": "E:\\my_proj\\fog_recognition\\recognition_pre_fog_simpler\\data\\msg_pool\\todo"}, "processor_name": "ExtractParaSelectorInit"}, "payload": "E:/my_proj/fog_recognition/ExtendFoGData/fixed_data/Tuned4Model/DOE2/T08_OneByOne", "status": true}

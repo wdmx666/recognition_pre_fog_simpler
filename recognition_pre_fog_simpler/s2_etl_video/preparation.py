@@ -34,7 +34,7 @@ class VideoETLConfig(MyConfig):
 
     @classmethod
     def videoUnfold4FoG(cls):
-        from .processors import VideoUnfold4FoG
+        from .controllers import VideoUnfold4FoG
         processor = VideoUnfold4FoG(dependencies=[MyNode.VideoMark.value],reset=False)
         etl_props = MyProperties()
         save_path = path.Path(VideoETLConfig.SAVE_PATH).joinpath(processor.class_name)

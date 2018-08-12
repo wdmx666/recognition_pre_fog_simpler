@@ -29,14 +29,14 @@ class SignalRemarkExtractConfig(MyConfig):
 
     @classmethod
     def calWindow(cls):
-        from .core_algo import CalWindow
+        from .services import CalWindow
         wd = CalWindow(start=0, ksize=256, step=5)
         wd.set_para(**cls.WINDOW_PARAMETER)
         return wd
 
     @classmethod
     def signalReMark4FoG(cls):
-        from .processors import SignalReMark4FoG
+        from .controllers import SignalReMark4FoG
         processor = SignalReMark4FoG(dependencies=[MyNode.SignalETL4FoG.name, MyNode.VideoUnfold4FoG.value], reset=True)
         props = MyProperties()
         _status_definition = cls.STATUS_DEFINITION
@@ -50,7 +50,7 @@ class SignalRemarkExtractConfig(MyConfig):
 
     @classmethod
     def scaleFeatureSelect123(cls):
-        from .processors import ScaleFeatureSelect123
+        from .controllers import ScaleFeatureSelect123
         processor = ScaleFeatureSelect123(dependencies=[MyNode.SignalReMark4FoG.value], reset=True)
         props = MyProperties()
         _status_definition = cls.STATUS_DEFINITION

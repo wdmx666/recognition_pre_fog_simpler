@@ -21,7 +21,7 @@ class FeatureReETLInit(object):
 
     def run(self):
         raw_input = ConfigFactory.parse_file(os.path.abspath(
-            '../recognition_pre_fog_simple/s4_re_etl_feature/config/raw_imput.conf'))
+            '../recognition_pre_fog_simpler/s4_re_etl_feature/config/raw_imput.conf'))
         for i in raw_input["DOE2_TESTS"]:
             msg = PyMsgJson()
             msg.set_ID(i.get("id")).set_payload(i.get("url")).set_status(True)
@@ -35,7 +35,7 @@ class FeatureReETLInit(object):
 
 
 class FeatureReETLConfig(MyConfig):
-    path = '../recognition_pre_fog_simple/s4_re_etl_feature/config/para.conf'
+    path = '../recognition_pre_fog_simpler/s4_re_etl_feature/config/para.conf'
     _d_conf = ConfigFactory.parse_file(os.path.abspath(path))
     print(_d_conf)
     STATUS_INFO_COLS = _d_conf["STATUS_INFO_COLS"]
@@ -45,7 +45,7 @@ class FeatureReETLConfig(MyConfig):
 
     @classmethod
     def scaleFeatureOneByOne(cls):
-        from .processors import ScaleFeatureOneByOne
+        from .controllers import ScaleFeatureOneByOne
         processor = ScaleFeatureOneByOne(dependencies=[MyNode.FeatureReETL.name], reset=True)
         props = MyProperties()
         props.update({"status_info_cols": cls.STATUS_INFO_COLS})
@@ -57,7 +57,7 @@ class FeatureReETLConfig(MyConfig):
 
     @classmethod
     def scaleFeatureOneAll(cls):
-        from .processors import ScaleFeatureOneAll
+        from .controllers import ScaleFeatureOneAll
         processor = ScaleFeatureOneAll(dependencies=[MyNode.FeatureReETL.name],reset=True)
         props = MyProperties()
         props.update({"status_info_cols": cls.STATUS_INFO_COLS})
@@ -78,7 +78,7 @@ class FeatureReETLConfig(MyConfig):
     @classmethod
     def featureReETLServer(cls):
         from ..commons.msg_server import MsgServer
-        server = MsgServer(cls.featureReETLApp(), n_jobs=4, single_thread=False, time_out=10)
+        server = MsgServer(cls.featureReETLApp(), n_jobs=4, single_thread=True, time_out=10)
         FeatureReETLInit(MyNode.FeatureReETL.name, server.msg_pool).run()
         return server
 

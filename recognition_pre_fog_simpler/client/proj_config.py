@@ -10,5 +10,4 @@ class MyNode(Enum):
     SignalReMark4FoG = "SignalReMark4FoG"
     ScaleFeatureSelect = "ScaleFeatureSelect123"
     FeatureReETL = "FeatureReETL"
-    ScaleFeature = "OneAll"
     DOE2 = "ONE_ALL"
